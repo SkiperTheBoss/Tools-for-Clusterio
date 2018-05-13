@@ -1,26 +1,22 @@
 {
-    "admins": [
-        "SkiperTheBoss"
+    "name": "Clusterio instance: Name",
+    "description": "",
+    "tags": [
+        "Clusterio"
     ],
-    "afk_autokick_interval": 0,
+    "max_players": "4",
+    "visibility": {
+        "lan": true,
+        "public": true
+    },
+    "username": "",
+    "token": "",
+    "game_password": "",
+    "verify_user_identity": true,
+    "admins": {},
     "allow_commands": "admins-only",
-    "auto_pause": 1,
     "autosave_interval": 10,
     "autosave_slots": 5,
-    "description": "Clusterio hosted by Skiper",
-    "game_password": "",
-    "max_players": "4",
-    "name": "Skiper's Clusterio: Instance",
-    "tags": [
-        "skiper",
-        "clusterio",
-        "test"
-    ],
-    "token": "",
-    "username": "",
-    "verify_user_identity": 1,
-    "visibility": {
-        "lan": 1,
-        "public": 1
-    }
+    "afk_autokick_interval": 0,
+    "auto_pause": false
 }

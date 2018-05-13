@@ -2,8 +2,8 @@
 #Persistent
 #NoEnv
 
-#Include JSON.ahk
-#Include OrderedArray.ahk
+#Include lib\JSON.ahk
+#Include lib\OrderedArray.ahk
 
 factorioClusterio := A_Desktop "\Clusterio\factorioClusterio\"
 

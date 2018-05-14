@@ -1,6 +1,7 @@
 {
     "name": "Clusterio instance: Name",
     "description": "",
+	"game_password": "",
     "tags": [
         "Clusterio"
     ],
@@ -10,8 +11,8 @@
         "public": true
     },
     "username": "",
+	"password": "",
     "token": "",
-    "game_password": "",
     "verify_user_identity": true,
     "admins": {},
     "allow_commands": "admins-only",

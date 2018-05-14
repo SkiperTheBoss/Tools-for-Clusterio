@@ -47,8 +47,8 @@ Gui, Add, Checkbox, x+5 yp vGET_Verify_User_Identity, Verified Players?
 Gui, Add, Checkbox, xp-83 y+10 vGET_Visibility_Public, Public
 Gui, Add, Checkbox, x+5 yp vGET_Visibility_Lan, Lan
 Gui, Add, Text, xm15 y+10, Allow Commands:
-Gui, Add, Radio, x+5 yp vGET_Allow_Command altsubmit, Admins Only
-Gui, Add, Radio, x+5 yp altsubmit, All
+Gui, Add, Radio, x+5 yp vGET_Allow_Commands altsubmit hwndHGAC1, Admins Only
+Gui, Add, Radio, x+5 yp altsubmit hwndHGAC2, All
 Gui, Add, Text, xm15 y+10 w90, Auto Save Interval (Min):
 Gui, Add, Slider, x+3 yp w140 Range0-60 vGET_Auto_Save_Interval_Slider gSE, 5
 Gui, Add, Edit, x+5 yp w30 vGET_Auto_Save_Interval_Edit gES,
@@ -137,10 +137,10 @@ If (Read_Visibility_Lan = "true" or Read_Visibility_Lan == 1)
 	GuiControl,, GET_Visibility_Lan, 1
 else
 	GuiControl,, GET_Visibility_Lan, 0
-IF (Read_Allow_Commands == "admins-only")
-	GuiControl,, GET_Allow_Command, 1
+If (Read_Allow_Commands == "admins-only") ; some unexpected error
+	GuiControl,, GET_Allow_Commands, 1
 else ; If (Read_Allow_Commands == "")
-	GuiControl,, GET_Allow_Command, 2
+	GuiControl,, GET_Allow_Commands, 2
 GuiControl, Text, GET_Auto_Save_Interval_Slider, %Read_Autosave_Interval%
 GuiControl, Text, GET_Auto_Save_Interval_Edit, %Read_Autosave_Interval%
 GuiControl, Text, GET_Auto_Save_Slots_Slider, %Read_Autosave_Slots%
@@ -151,7 +151,6 @@ return
 
 ; Load a JSON File correct (server-settings.json)
 ReadJSON:
-Gui, Submit, Nohide
 FileRead, jsonFile, %File%
 ImportJSON := JSON.Load(jsonFile)
 
@@ -218,10 +217,10 @@ GuiControlGet, New_Auto_Save_Slots,, GET_Auto_Save_Slots_Edit
 GuiControlGet, New_AFK_Autokick_Interval,, GET_AFK_Autokick_Interval_Edit
 GuiControlGet, New_Visibility_Lan,, GET_Visibility_Lan
 GuiControlGet, New_Visibility_Public,, GET_Visibility_Public
-If (GET_Allow_Command == 1)
-	New_Allow_Command = admins-only
+If (GET_Allow_Commands == 1 or GET_Allow_Commands == "admins-only")
+	New_Allow_Commands = admins-only
 else
-	New_Allow_Command =
+	New_Allow_Commands =
 StringSplit, GET_Tag, Split_GET_Tags_List, `n
 StringSplit, GET_Admin, Split_GET_Admins_List, `n
 
@@ -236,7 +235,7 @@ Array := OrderedArray(        "name", New_Name
 							, "game_password", Read_Game_Password
 							, "verify_user_identity", New_Verify_User_Identity
 							, "admins", []
-							, "allow_commands", New_Allow_Command
+							, "allow_commands", New_Allow_Commands
 							, "autosave_interval", New_Auto_Save_Interval
 							, "autosave_slots", New_Auto_Save_Slots
 							, "afk_autokick_interval", New_AFK_Autokick_Interval
@@ -278,13 +277,14 @@ Loop %JSON_Split0%
 		Current_Word := % Search_Word%A_Index%
 		IfInString, Current_Line, %Current_Word%
 		{
+			StringReplace, Current_Line, Current_Line, "1", true, all
+			StringReplace, Current_Line, Current_Line, "0", false, all
 			StringReplace, Current_Line, Current_Line, 1, true, all
 			StringReplace, Current_Line, Current_Line, 0, false, all
 		}
 	}
 	
 	Replaced_JSON .= Current_Line
-	
 	R := A_Index + 1
 	I := % JSON_Split%R%
 	If  (I)

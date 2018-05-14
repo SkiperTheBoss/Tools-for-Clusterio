@@ -25,7 +25,7 @@ Gui, Add, Button, xm5 y320 w288 h30 gSave, Save
 Gui, Add, Tab, xm+5 ym40 w288 h270, General|Advanced|Whitelist|Banlist|Settings
 
 ; Tab General
-Gui, Add, Text, xp+10 y+5, Name:
+Gui, Add, Text, xp10 y+5, Name:
 Gui, Add, Edit, x+30 yp w200 h20 vGET_Name, 
 Gui, Add, Text, xm14 y+10, Description:
 Gui, Add, Edit, x+5 yp w200 h20 vGET_Description,
@@ -38,7 +38,7 @@ Gui, Add, Edit, xp+55 yp-2 w30 h20 vGET_Slots,
 
 ; Tab Advanced
 Gui, Tab, 2
-Gui, Add, Text, xm15 ym60 w50, Username:
+Gui, Add, Text, xm15 ym67 w50, Username:
 Gui, Add, Edit, x+10 yp w200 h20 vGET_Username,
 Gui, Add, Text, xm15 y+10 w50, Token:
 Gui, Add, Edit, x+10 yp w200 h20 vGET_Token,
@@ -47,8 +47,9 @@ Gui, Add, Checkbox, x+5 yp vGET_Verify_User_Identity, Verified Players?
 Gui, Add, Checkbox, xp-83 y+10 vGET_Visibility_Public, Public
 Gui, Add, Checkbox, x+5 yp vGET_Visibility_Lan, Lan
 Gui, Add, Text, xm15 y+10, Allow Commands:
-Gui, Add, Radio, x+5 yp vGET_Allow_Commands altsubmit hwndHGAC1, Admins Only
-Gui, Add, Radio, x+5 yp altsubmit hwndHGAC2, All
+Gui, Add, Radio, x+5 yp vGET_Allow_Commands altsubmit hwndGAC1, Admins Only
+Gui, Add, Radio, x+5 yp altsubmit hwndGAC2, Yes
+Gui, Add, Radio, x+5 yp altsubmit hwndGAC3, No
 Gui, Add, Text, xm15 y+10 w90, Auto Save Interval (Min):
 Gui, Add, Slider, x+3 yp w140 Range0-60 vGET_Auto_Save_Interval_Slider gSE, 5
 Gui, Add, Edit, x+5 yp w30 vGET_Auto_Save_Interval_Edit gES,
@@ -137,10 +138,12 @@ If (Read_Visibility_Lan = "true" or Read_Visibility_Lan == 1)
 	GuiControl,, GET_Visibility_Lan, 1
 else
 	GuiControl,, GET_Visibility_Lan, 0
-If (Read_Allow_Commands == "admins-only") ; some unexpected error
-	GuiControl,, GET_Allow_Commands, 1
-else ; If (Read_Allow_Commands == "")
-	GuiControl,, GET_Allow_Commands, 2
+If (Read_Allow_Commands == "admins-only")
+	GuiControl,, %GAC1%, 1
+else If (Read_Allow_Commands == "true" or Read_Allow_Commands == 1)
+	GuiControl,, %GAC2%, 1
+else If (Read_Allow_Commands == "false" or Read_Allow_Commands == 0)
+	GuiControl,, %GAC3%, 1
 GuiControl, Text, GET_Auto_Save_Interval_Slider, %Read_Autosave_Interval%
 GuiControl, Text, GET_Auto_Save_Interval_Edit, %Read_Autosave_Interval%
 GuiControl, Text, GET_Auto_Save_Slots_Slider, %Read_Autosave_Slots%
@@ -219,8 +222,10 @@ GuiControlGet, New_Visibility_Lan,, GET_Visibility_Lan
 GuiControlGet, New_Visibility_Public,, GET_Visibility_Public
 If (GET_Allow_Commands == 1 or GET_Allow_Commands == "admins-only")
 	New_Allow_Commands = admins-only
-else
-	New_Allow_Commands =
+else If (GET_Allow_Commands == 2 or GET_Allow_Commands == "true")
+	New_Allow_Commands := true
+else If (GET_Allow_Commands == 3 or GET_Allow_Commands == "false")
+	New_Allow_Commands := false
 StringSplit, GET_Tag, Split_GET_Tags_List, `n
 StringSplit, GET_Admin, Split_GET_Admins_List, `n
 
@@ -266,7 +271,7 @@ Loop %factorioClusterio%\instances\*, 2, 0
 
 StringSplit, JSON_Split, JSON_Create, `n
 Replaced_JSON :=
-Search_Var := "auto_pause,verify_user_identity,lan,public"
+Search_Var := "auto_pause,verify_user_identity,lan,public,allow_commands"
 StringSplit, Search_Word, Search_Var, `,
 
 Loop %JSON_Split0%

@@ -10,6 +10,7 @@ The Editor has already 2 Tabs there a ready to go! (*You probably have to correc
 The Manager is still in early process but it should works normaly. (*Same with the PATH here)
 
 You need [AutoHotkey](https://autohotkey.com/) to run the Scripts.
+Please report [Issues here](https://github.com/SkiperTheBoss/Tools-for-Clusterio/issues).
 
 **Planned**
  - **Editor**

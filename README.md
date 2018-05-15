@@ -15,7 +15,7 @@ You need [AutoHotkey](https://autohotkey.com/) to run the Scripts.
  - **Editor**
      - ToolTips when you go over the Text or Fields.
      - Added option to select your clusterio Folder.
-     - Whitelist (*will be able to copy to all server)
+     - Whitelist (*will be able to copy to all instances)
      - Banlist (*same here)
      - Modlist (see what the instance for mods has / sharemods will be included)
      - Settings

@@ -13,13 +13,15 @@ Server_Config_Files := Object()
 for n, param in A_Args
 {
 	If (param == "-file") {
-		IfExist, % A_Args[n+1]
+		File := A_Args[n+1]
+		IfExist, %File%
 		{
-			File := A_Args[n+1]
 			SplitPath, File, FileName, FileDir
 			; Add Custom server-setting.json to the List
 			Server_Config_Files.Push(Server_Name(file), [FileDir, FileName])
 			
+		} else {
+			MsgBox, 16, Warning, Couldn't Load the File.`n`n%File%
 		}
 	}
 }
@@ -288,7 +290,7 @@ Loop % Floor(Split_List)
 	{
 		Current_Server_Path := Server_Config_Files[PI][1] "\" Server_Config_Files[PI][2]
 		If (File != Current_Server_Path) {
-			MsgBox, 4132, Warning, You didn't Load the current selected Server`nCurrent selected Server: %GET_Current_Server_Name%.`n`nDo you want to replace the current selected Server with the old Settings?`nOld Settings: %Current_Server_Name%
+			MsgBox, 4132, Warning, You didn't Load the current selected Server`nCurrent selected Server: %Current_Server_Name%.`n`nDo you want to replace the current selected Server with the old Settings?`nOld Settings: %GET_Current_Server_Name%
 			IfMsgBox, Yes
 			{
 				New_File := Server_Config_Files[PI][1] "\" Server_Config_Files[PI][2]

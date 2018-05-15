@@ -5,13 +5,42 @@
 #Include lib\JSON.ahk
 #Include lib\OrderedArray.ahk
 
+; List for Servername and they Path
+Server_Config_Files := Object()
+
+
+; The Script also works with Parameters
+for n, param in A_Args
+{
+	If (param == "-file") {
+		IfExist, % A_Args[n+1]
+		{
+			File := A_Args[n+1]
+			SplitPath, File, FileName, FileDir
+			; Add Custom server-setting.json to the List
+			Server_Config_Files.Push(Server_Name(file), [FileDir, FileName])
+			
+		}
+	}
+}
+
 ; Path to the Clusterio Folder
 factorioClusterio := A_Desktop "\Clusterio\factorioClusterio\"
 
 ; Make a List of all Instance there a placed in Clusterio Folder
-Loop %factorioClusterio%\instances\*, 2, 0
+Loop %factorioClusterio%\instances\*server-settings.json, 0, 1
 {
-	DropDownList .= A_LoopFileName "|"
+	SplitPath A_LoopFileLongPath, FileName, FileDir
+	Server_Config_Files.Push(Server_Name(A_LoopFileLongPath), [FileDir, FileName])
+}
+
+Split_List := % Server_Config_Files.Length() / 2
+NI := 1
+
+Loop % Floor(Split_List)
+{
+	DropDownList .= Server_Config_Files[NI] "|"
+	NI += 2
 }
 
 ; Serverselect
@@ -19,10 +48,10 @@ Gui, Add, Text, xp y+10 h13, Server:
 Gui, Add, DropDownList, x+5 yp-2 w150 vSelectFile Choose1, %DropDownList%
 Gui, Add, Button, x+5 yp-2 w50 h23 gLoad, Load
 Gui, Add, Button, x+5 yp w50 h23 gDefault, Default
-Gui, Add, Button, xm5 y350 w288 h30 gSave, Save
+Gui, Add, Button, xm5 y370 w288 h30 gSave, Save
 
 ; Tabs
-Gui, Add, Tab, xm+5 ym40 w288 h300, General|Advanced|Whitelist|Banlist|Settings
+Gui, Add, Tab, xm+5 ym40 w288 h320, General|Advanced|Whitelist|Banlist|Mods|Settings
 
 ; Tab General
 Gui, Add, Text, xp10 y+5, Name:
@@ -41,7 +70,7 @@ Gui, Add, Edit, x+5 yp-2 w30 h20 vGET_Slots_Edit gES,
 
 ; Tab Advanced
 Gui, Tab, 2
-Gui, Add, Text, xm15 ym67 w50, Username:
+Gui, Add, Text, xm15 y+5 w50, Username:
 Gui, Add, Edit, x+10 yp w200 h20 vGET_Username,
 Gui, Add, Text, xm15 y+10 w50, Password:
 Gui, Add, Edit, x+10 yp w200 h20 vGET_Password,
@@ -89,7 +118,10 @@ Gui, Add, Edit, x+5 yp w30 vGET_AFK_Autokick_Interval_Edit gES,
 
 Gui, Show, AutoSize, Server Config Editor
 
-GoSub Load
+If (File)
+	GoSub, ReadJSON
+else
+	GoSub Load
 return
 
 ; Sliders will Control the Edit
@@ -122,17 +154,28 @@ File := A_WorkingDir "\default-server-settings.json"
 GoSub ReadJSON
 return
 
-; Load server-settings.json
+; Load the default-server-settings.json
 Load:
 GuiControlGet, GET_File,, SelectFile
-Loop %factorioClusterio%\instances\*, 2, 0
-{
-	If (GET_File == A_LoopFileName) {
-		File := factorioClusterio "\instances\" A_LoopFileName "\server-settings.json"
-		break
+
+If (GET_File) {
+	NI := 1
+	PI := 2
+	
+	Loop % Floor(Split_List)
+	{	; Grab the right Path
+		GET_Current_Server_Name := Server_Config_Files[NI]
+		If (GET_File == GET_Current_Server_Name ) {
+			File := Server_Config_Files[PI].1 "\" Server_Config_Files[PI].2
+			break
+		}
+		NI += 2
+		PI += 2
 	}
-}
-GoSub ReadJSON
+	
+	GoSub ReadJSON
+} else
+	MsgBox, 16, Error, Couldn't load the File!
 return
 
 ; Change the Value of some Controls in the Gui
@@ -232,6 +275,36 @@ return
 ; Save as a JSON File (server-settings.json)
 Save:
 Gui, Submit, Nohide
+GuiControlGet, GET_File,, SelectFile
+
+NI := 1
+PI := 2
+
+; Check if current selected Server is loaded
+Loop % Floor(Split_List)
+{	; Grab the right Path
+	Current_Server_Name := Server_Config_Files[NI]
+	If (GET_File == Current_Server_Name)
+	{
+		Current_Server_Path := Server_Config_Files[PI][1] "\" Server_Config_Files[PI][2]
+		If (File != Current_Server_Path) {
+			MsgBox, 4132, Warning, You didn't Load the current selected Server`nCurrent selected Server: %GET_Current_Server_Name%.`n`nDo you want to replace the current selected Server with the old Settings?`nOld Settings: %Current_Server_Name%
+			IfMsgBox, Yes
+			{
+				New_File := Server_Config_Files[PI][1] "\" Server_Config_Files[PI][2]
+				GET_File := Current_Server_Name
+			} else
+				return
+			break
+		} else If (File == Current_Server_Path && GET_File == GET_Current_Server_Name) {
+			New_File := Server_Config_Files[PI][1] "\" Server_Config_Files[PI][2]
+			break
+		}
+	}
+	NI += 2
+	PI += 2
+}
+
 GuiControlGet, Split_GET_Tags_List,, GET_Tags_List
 GuiControlGet, Split_GET_Admins_List,, GET_Admins_List
 GuiControlGet, New_Name,, GET_Name
@@ -290,15 +363,6 @@ Loop %GET_Admin0%
 ; Create a JSON Format
 JSON_Create := JSON.Dump(Array,,4)
 
-GuiControlGet, GET_File,, SelectFile
-Loop %factorioClusterio%\instances\*, 2, 0
-{
-	If (GET_File == A_LoopFileName) {
-		File := factorioClusterio "\instances\" A_LoopFileName "\server-settings.json"
-		break
-	}
-}
-
 ; Make sure it dosen't save true/false with quotes
 StringSplit, JSON_Split, JSON_Create, `n
 Replaced_JSON :=
@@ -327,10 +391,20 @@ Loop %JSON_Split0% ; check evey line
 		Replaced_JSON .=  "`n"
 }
 
-FileDelete, %File%
-FileAppend, %Replaced_JSON%, %File%
-MsgBox, 0, Server Config Editor, Save server-settings.json for %GET_File%!
+If (New_File) {
+	FileDelete, %New_File%
+	FileAppend, %Replaced_JSON%, %New_File%
+	MsgBox, 0, Server Config Editor, Save server-settings.json for %GET_File%!
+} else {
+	MsgBox, 16, Warning, Couldn't save the File!
+}
 return
 
 GuiClose:
 ExitApp
+
+Server_Name(file) {
+	FileRead, file_str, %file%
+	str := JSON.Load(file_str)
+	return str.name
+}

@@ -80,8 +80,8 @@ Gui, Add, Edit, xp y+5 w100 h100 vGET_Tags_List,
 Gui, Add, Text, x+5 yp-17, Admins:
 Gui, Add, Edit, xp yp+17 w100 h100 vGET_Admins_List,
 Gui, Add, Text, xm+19 yp+110, Slots:
-Gui, Add, Slider, x+25 yp w174 Range1-100 vGET_Slots_Slider gSE TickInterval5 altsubmit, 5
-Gui, Add, Edit, x+5 yp-2 w30 h20 vGET_Slots_Edit gES,
+Gui, Add, Slider, x+25 yp w174 Range1-100 vGET_Max_Players_Slider gSE TickInterval5 altsubmit, 5
+Gui, Add, Edit, x+5 yp-2 w30 h20 vGET_Max_Players_Edit gES,
 
 ; Tab Advanced
 Gui, Tab, 2
@@ -151,8 +151,8 @@ GuiControlGet, ASSS,, GET_Autosave_Slots_Slider
 GuiControl, Text, GET_Autosave_Slots_Edit, %ASSS%
 GuiControlGet, AAIS,, GET_AFK_Autokick_Interval_Slider
 GuiControl, Text, GET_AFK_Autokick_Interval_Edit, %AAIS%
-GuiControlGet, GSS,, GET_Slots_Slider
-GuiControl, Text, GET_Slots_Edit, %GSS%
+GuiControlGet, GSS,, GET_Max_Players_Slider
+GuiControl, Text, GET_Max_Players_Edit, %GSS%
 return
 
 ; Edit will Control the Sliders
@@ -163,8 +163,8 @@ GuiControlGet, ASSS,, GET_Autosave_Slots_Edit
 GuiControl, Text, GET_Autosave_Slots_Slider, %ASSS%
 GuiControlGet, AAIS,, GET_AFK_Autokick_Interval_Edit
 GuiControl, Text, GET_AFK_Autokick_Interval_Slider, %AAIS%
-GuiControlGet, GSS,, GET_Slots_Edit
-GuiControl, Text, GET_Slots_Slider, %GSS%
+GuiControlGet, GSS,, GET_Max_Players_Edit
+GuiControl, Text, GET_Max_Player_Slider, %GSS%
 return
 
 ; Load the Default Server Setting that you can Change.
@@ -199,7 +199,7 @@ return
 
 ; Change the Value of some Controls in the Gui
 GuiControl:
-GET_Keys := "name,description,game_password,username,password,token,autosave_interval?se,autosave_slots?se,afk_autokick_interval?se,visibility_public?tf,visibility_lan?tf,verify_user_identity?tf,auto_pause?tf"
+GET_Keys := "name,description,game_password,username,password,token,autosave_interval?se,autosave_slots?se,afk_autokick_interval?se,visibility_public?tf,visibility_lan?tf,verify_user_identity?tf,auto_pause?tf,max_players?se,tags?l,admins?l"
 StringSplit, GET_Array, GET_Keys, `,
 Loop %GET_Array0%
 {
@@ -215,23 +215,20 @@ Loop %GET_Array0%
 		} else If (str_split2 == "tf") { ; true or false
 			If (Read_%str_split1% == 1 or Read_%str_split1% == true)
 				GuiControl,, GET_%str_split1%, 1
-			else If (Read_%str_split1% == 0 or Read_%str_split1% == false)
+			else If (Read_%str_split1% == 0 or Read_%str_split1% == false or !Read_%str_split1%)
 				GuiControl,, GET_%str_split1%, 0
+		} else If (str_split2 == "l") {
+			GuiControl, Text, GET_%str_split1%_List, % %str_split1%_List
 		}
 	} else
 		GuiControl, Text, GET_%str%, % Read_%str% ; Control
 }
 
-; Don't change anything so far...
-GuiControl, Text, GET_Tags_List, %Tags_List%
-GuiControl, Text, GET_Admins_List, %Admins_List%
-GuiControl, Text, GET_Slots_Edit, %Read_Max_Players%
-
 If (Read_Allow_Commands == "admins-only")
 	GuiControl,, %GAC1%, 1
 else If (Read_Allow_Commands == "true" or Read_Allow_Commands == 1)
 	GuiControl,, %GAC2%, 1
-else If (Read_Allow_Commands == "false" or Read_Allow_Commands == 0)
+else If (Read_Allow_Commands == "false" or Read_Allow_Commands == 0 or !Read_Allow_Commands)
 	GuiControl,, %GAC3%, 1
 return
 
@@ -240,7 +237,7 @@ ReadJSON:
 FileRead, jsonFile, %File%
 ImportJSON := JSON.Load(jsonFile)
 
-Read_Keys := "name,description,game_password,tags,max_players,username,password,token,game_password,verify_user_identity,admins,allow_commands,autosave_interval,autosave_slots,afk_autokick_interval,auto_pause,visibility,visibility.public,visibility.lan"
+Read_Keys := "name,description,game_password,tags,max_players,username,password,token,game_password,verify_user_identity,admins,allow_commands,autosave_interval,autosave_slots,afk_autokick_interval,auto_pause,visibility.public,visibility.lan"
 StringSplit, Read_Array, Read_Keys, `,
 Loop %Read_Array0%
 {
@@ -259,35 +256,26 @@ Loop %Read_Array0%
 
 ; Server_Config_Files[2][4][0] ; Mod Anzahl
 ; GuiControl,, Mods, Test|Test2 ; Add to Mod Tab 
-
-Tags_List :=
-Loop
+List_Keys := "tags,admins"
+StringSplit, List_Array, List_Keys, `,
+Loop %List_Array0%
 {
-	if ImportJSON.tags[A_Index] {
-		Read_Tags%A_Index% := ImportJSON.tags[A_Index]
-		Tags_List .= ImportJSON.tags[A_Index]
-		if ImportJSON.tags[A_Index+1]
-			Tags_List .= "`n"
-	} else {
-		ImportJSON.tags.0 := A_Index - 1
-		break
+	str := List_Array%A_Index%
+	%str%_List :=
+	;MsgBox %str%
+	Loop
+	{
+		If ImportJSON[str][A_Index] {
+			;Read_%str% := ImportJSON[str][A_Index]
+			%str%_List .= ImportJSON[str][A_Index]
+			if ImportJSON[str][A_Index+1]
+				%str%_List .= "`n"
+		} else {
+			ImportJSON[str][0] := A_Index - 1
+			break
+		}
 	}
 }
-
-Admins_List :=
-Loop
-{
-	if ImportJSON.admins[A_Index] {
-		Read_Admin%A_Index% := ImportJSON.admins[A_Index]
-		Admins_List .= ImportJSON.admins[A_Index]
-		if ImportJSON.admins[A_Index+1]
-			Admins_List .= "`n"
-	} else {
-		ImportJSON.admins.0 := A_Index - 1
-		break
-	}
-}
-
 GoSub, GuiControl
 return
 
@@ -324,7 +312,7 @@ Loop % Floor(Split_List)
 	PI += 2
 }
 
-New_Keys := "name,description,game_password,slots?e,username,password,token,auto_pause,verify_user_identity,autosave_interval?e,autosave_slots?e,afk_autokick_interval?e,visibility_lan,visibility_public"
+New_Keys := "name,description,game_password,max_players?e,username,password,token,auto_pause,verify_user_identity,autosave_interval?e,autosave_slots?e,afk_autokick_interval?e,visibility_lan,visibility_public"
 StringSplit, New_Array, New_Keys, `,
 Loop %New_Array0%
 {
@@ -334,9 +322,8 @@ Loop %New_Array0%
 		StringSplit, str_split, str, ?
 		If (str_split2 == "e") 
 			GuiControlGet, New_%str_split1%,, GET_%str_split1%_Edit
-	} else {
-		GuiControlGet, New_%str%,, % GET_%str%
-	}
+	} else
+		GuiControlGet, New_%str%,, GET_%str%
 }
 
 GuiControlGet, Split_GET_Tags_List,, GET_Tags_List
@@ -355,7 +342,7 @@ Array := OrderedArray(   "name", New_Name
 				   , "description", New_Description
 				   ,	"game_password", New_Game_Password
 				   , "tags", []
-				   , "max_players", New_Slots
+				   , "max_players", New_Max_Players
 				   , "visibility", { public: New_Visibility_Public, lan: New_Visibility_Lan }
 				   , "username", New_Username
 				   , "password", New_Password

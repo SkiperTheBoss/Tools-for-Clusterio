@@ -8,7 +8,6 @@
 ; List for Servername and they Path
 Server_Config_Files := Object()
 
-
 ; The Script also works with Parameters
 for n, param in A_Args
 {
@@ -18,8 +17,12 @@ for n, param in A_Args
 		{
 			SplitPath, File, FileName, FileDir
 			; Add Custom server-setting.json to the List
-			Server_Config_Files.Push(Server_Name(file), [FileDir, FileName])
-			
+			Server_Config_Files.Push(Server_Name(file), [FileDir, FileName, Mods, []])
+			Mods := Server_Config_Files[2][1] "\mods\*.zip" 
+			Loop, %Mods%, 1, 0
+			{
+				Server_Config_Files[2][4].Push(A_LoopFileName)
+			} 
 		} else {
 			MsgBox, 16, Warning, Couldn't Load the File.`n`n%File%
 		}
@@ -30,10 +33,20 @@ for n, param in A_Args
 factorioClusterio := A_Desktop "\Clusterio\factorioClusterio\"
 
 ; Make a List of all Instance there a placed in Clusterio Folder
+NI := 2
 Loop %factorioClusterio%\instances\*server-settings.json, 0, 1
 {
 	SplitPath A_LoopFileLongPath, FileName, FileDir
-	Server_Config_Files.Push(Server_Name(A_LoopFileLongPath), [FileDir, FileName])
+	Server_Config_Files.Push(Server_Name(A_LoopFileLongPath), [FileDir, FileName, Mods, []])
+	
+	mods_i := 0
+	Loop %FileDir%\mods\*.zip, 1, 0
+	{
+		Server_Config_Files[NI][4].Push(A_LoopFileName)
+		mods_i := A_Index
+	}
+	Server_Config_Files[NI][4][0] := mods_i
+	NI += 2
 }
 
 Split_List := % Server_Config_Files.Length() / 2
@@ -87,11 +100,11 @@ Gui, Add, Radio, x+5 yp vGET_Allow_Commands altsubmit hwndGAC1, Admins Only
 Gui, Add, Radio, x+5 yp altsubmit hwndGAC2, Yes
 Gui, Add, Radio, x+5 yp altsubmit hwndGAC3, No
 Gui, Add, Text, xm15 y+10 w90, Auto Save Interval (Min):
-Gui, Add, Slider, x+3 yp w140 Range0-60 vGET_Auto_Save_Interval_Slider gSE TickInterval5 altsubmit, 5
-Gui, Add, Edit, x+5 yp w30 vGET_Auto_Save_Interval_Edit gES,
+Gui, Add, Slider, x+3 yp w140 Range0-60 vGET_Autosave_Interval_Slider gSE TickInterval5 altsubmit, 5
+Gui, Add, Edit, x+5 yp w30 vGET_Autosave_Interval_Edit gES,
 Gui, Add, Text, xm15 y+10 w90, Auto Save Slots:
-Gui, Add, Slider, x+5 yp w140 Range0-10 vGET_Auto_Save_Slots_Slider gSE TickInterval1 altsubmit, 5
-Gui, Add, Edit, x+5 yp w30 vGET_Auto_Save_Slots_Edit gES,
+Gui, Add, Slider, x+5 yp w140 Range0-10 vGET_Autosave_Slots_Slider gSE TickInterval1 altsubmit, 5
+Gui, Add, Edit, x+5 yp w30 vGET_Autosave_Slots_Edit gES,
 Gui, Add, Text, xm15 y+10 w90, AFK Autokick Interval (Min):
 Gui, Add, Slider, x+5 yp w140 Range0-60 vGET_AFK_Autokick_Interval_Slider gSE TickInterval5 altsubmit,  0
 Gui, Add, Edit, x+5 yp w30 vGET_AFK_Autokick_Interval_Edit gES,
@@ -108,6 +121,10 @@ Gui, Add, Edit, x+5 yp w30 vGET_AFK_Autokick_Interval_Edit gES,
 ; Tab Whitelist
 
 ; Tab Banlist
+
+; Tab Mds
+Gui, Tab, 5
+Gui, Add, ListBox, w260 h270 +Redraw vMods,
 
 ; Tab Settings
 
@@ -128,10 +145,10 @@ return
 
 ; Sliders will Control the Edit
 SE:
-GuiControlGet, ASIS,, GET_Auto_Save_Interval_Slider
-GuiControl, Text, GET_Auto_Save_Interval_Edit, %ASIS%
-GuiControlGet, ASSS,, GET_Auto_Save_Slots_Slider
-GuiControl, Text, GET_Auto_Save_Slots_Edit, %ASSS%
+GuiControlGet, ASIS,, GET_Autosave_Interval_Slider
+GuiControl, Text, GET_Autosave_Interval_Edit, %ASIS%
+GuiControlGet, ASSS,, GET_Autosave_Slots_Slider
+GuiControl, Text, GET_Autosave_Slots_Edit, %ASSS%
 GuiControlGet, AAIS,, GET_AFK_Autokick_Interval_Slider
 GuiControl, Text, GET_AFK_Autokick_Interval_Edit, %AAIS%
 GuiControlGet, GSS,, GET_Slots_Slider
@@ -140,10 +157,10 @@ return
 
 ; Edit will Control the Sliders
 ES:
-GuiControlGet, ASIS,, GET_Auto_Save_Interval_Edit
-GuiControl, Text, GET_Auto_Save_Interval_Slider, %ASIS%
-GuiControlGet, ASSS,, GET_Auto_Save_Slots_Edit
-GuiControl, Text, GET_Auto_Save_Slots_Slider, %ASSS%
+GuiControlGet, ASIS,, GET_Autosave_Interval_Edit
+GuiControl, Text, GET_Autosave_Interval_Slider, %ASIS%
+GuiControlGet, ASSS,, GET_Autosave_Slots_Edit
+GuiControl, Text, GET_Autosave_Slots_Slider, %ASSS%
 GuiControlGet, AAIS,, GET_AFK_Autokick_Interval_Edit
 GuiControl, Text, GET_AFK_Autokick_Interval_Slider, %AAIS%
 GuiControlGet, GSS,, GET_Slots_Edit
@@ -182,43 +199,40 @@ return
 
 ; Change the Value of some Controls in the Gui
 GuiControl:
-GuiControl, Text, GET_Name, %Read_Name%
-GuiControl, Text, GET_Description, %Read_Description%
-GuiControl, Text, GET_Game_Password, %Read_Game_Password%
+GET_Keys := "name,description,game_password,username,password,token,autosave_interval?se,autosave_slots?se,afk_autokick_interval?se,visibility_public?tf,visibility_lan?tf,verify_user_identity?tf,auto_pause?tf"
+StringSplit, GET_Array, GET_Keys, `,
+Loop %GET_Array0%
+{
+	str = % GET_Array%A_Index%
+	IfInString, str, ?
+	{
+		StringSplit, str_split, str, ?
+		If (str_split2 == "se") ; Slider controls Edit & Edit controls Slider
+		{
+			var := Read_%str_split1%
+			GuiControl, Text, GET_%str_split1%_Slider, %var% ; Slider Control
+			GuiControl, Text, GET_%str_split1%_Edit, %var% ; Edit Control
+		} else If (str_split2 == "tf") { ; true or false
+			If (Read_%str_split1% == 1 or Read_%str_split1% == true)
+				GuiControl,, GET_%str_split1%, 1
+			else If (Read_%str_split1% == 0 or Read_%str_split1% == false)
+				GuiControl,, GET_%str_split1%, 0
+		}
+	} else
+		GuiControl, Text, GET_%str%, % Read_%str% ; Control
+}
+
+; Don't change anything so far...
 GuiControl, Text, GET_Tags_List, %Tags_List%
 GuiControl, Text, GET_Admins_List, %Admins_List%
-GuiControl, Text, GET_Slots_Edit, %Read_MaxPlayers%
-GuiControl, Text, GET_Username, %Read_Username%
-GuiControl, Text, GET_Password, %Read_Password%
-GuiControl, Text, GET_Token, %Read_Token%
-If (Read_Auto_Pause == "true" or Read_Auto_Pause == 1)
-	GuiControl,, GET_Auto_Pause, 1
-else
-	GuiControl,, GET_Auto_Pause, 0
-If (Read_Verify_User_Identity == "true" or Read_Verify_User_Identity == 1)
-	GuiControl,, GET_Verify_User_Identity, 1
-else
-	GuiControl,, GET_Verify_User_Identity, 0
-If (Read_Visibility_Public == "true" or Read_Visibility_Public == 1)
-	GuiControl,, GET_Visibility_Public, 1
-else
-	GuiControl,, GET_Visibility_Public, 0
-If (Read_Visibility_Lan = "true" or Read_Visibility_Lan == 1)
-	GuiControl,, GET_Visibility_Lan, 1
-else
-	GuiControl,, GET_Visibility_Lan, 0
+GuiControl, Text, GET_Slots_Edit, %Read_Max_Players%
+
 If (Read_Allow_Commands == "admins-only")
 	GuiControl,, %GAC1%, 1
 else If (Read_Allow_Commands == "true" or Read_Allow_Commands == 1)
 	GuiControl,, %GAC2%, 1
 else If (Read_Allow_Commands == "false" or Read_Allow_Commands == 0)
 	GuiControl,, %GAC3%, 1
-GuiControl, Text, GET_Auto_Save_Interval_Slider, %Read_Autosave_Interval%
-GuiControl, Text, GET_Auto_Save_Interval_Edit, %Read_Autosave_Interval%
-GuiControl, Text, GET_Auto_Save_Slots_Slider, %Read_Autosave_Slots%
-GuiControl, Text, GET_Auto_Save_Slots_Edit, %Read_Autosave_Slots%
-GuiControl, Text, GET_AFK_Autokick_Interval_Slider, %Read_AFK_Autokick_Interval%
-GuiControl, Text, GET_AFK_Autokick_Interval_Edit, %Read_AFK_Autokick_Interval%
 return
 
 ; Load a JSON File correct (server-settings.json)
@@ -226,10 +240,26 @@ ReadJSON:
 FileRead, jsonFile, %File%
 ImportJSON := JSON.Load(jsonFile)
 
-Read_Name := ImportJSON.name
-Read_Description := ImportJSON.description
-Read_Game_Password := ImportJSON.game_password
-Read_Tags := ImportJSON.tags
+Read_Keys := "name,description,game_password,tags,max_players,username,password,token,game_password,verify_user_identity,admins,allow_commands,autosave_interval,autosave_slots,afk_autokick_interval,auto_pause,visibility,visibility.public,visibility.lan"
+StringSplit, Read_Array, Read_Keys, `,
+Loop %Read_Array0%
+{
+	str = % Read_Array%A_Index%
+	IfInString, str, .
+	{
+		StringReplace, str_new, str, ., _, all
+		StringSplit, str_array, str, .
+		If (str_array0) {
+			Read_%str_new% := ImportJSON[str_array1][str_array2]
+		}
+	} else
+		Read_%str% := ImportJSON[str]
+}
+; MsgBox, % Read_tags[1]
+
+; Server_Config_Files[2][4][0] ; Mod Anzahl
+; GuiControl,, Mods, Test|Test2 ; Add to Mod Tab 
+
 Tags_List :=
 Loop
 {
@@ -243,16 +273,7 @@ Loop
 		break
 	}
 }
-Read_MaxPlayers := ImportJSON.max_players
-Read_Visibility := ImportJSON.visibility
-Read_Visibility_Public := ImportJSON.visibility.public
-Read_Visibility_Lan := ImportJSON.visibility.lan
-Read_Username := ImportJSON.username
-Read_Password := ImportJSON.password
-Read_Token := ImportJSON.token
-Read_Game_Password := ImportJSON.game_password
-Read_Verify_User_Identity := ImportJSON.verify_user_identity
-Read_Admins := ImportJSON.admins
+
 Admins_List :=
 Loop
 {
@@ -266,11 +287,7 @@ Loop
 		break
 	}
 }
-Read_Allow_Commands := ImportJSON.allow_commands
-Read_Autosave_Interval := ImportJSON.autosave_interval
-Read_Autosave_Slots := ImportJSON.autosave_slots
-Read_AFK_Autokick_Interval := ImportJSON.afk_autokick_interval
-Read_Auto_Pause := ImportJSON.auto_pause
+
 GoSub, GuiControl
 return
 
@@ -307,22 +324,23 @@ Loop % Floor(Split_List)
 	PI += 2
 }
 
+New_Keys := "name,description,game_password,slots?e,username,password,token,auto_pause,verify_user_identity,autosave_interval?e,autosave_slots?e,afk_autokick_interval?e,visibility_lan,visibility_public"
+StringSplit, New_Array, New_Keys, `,
+Loop %New_Array0%
+{
+	str = % New_Array%A_Index%
+	IfInString, str, ?
+	{
+		StringSplit, str_split, str, ?
+		If (str_split2 == "e") 
+			GuiControlGet, New_%str_split1%,, GET_%str_split1%_Edit
+	} else {
+		GuiControlGet, New_%str%,, % GET_%str%
+	}
+}
+
 GuiControlGet, Split_GET_Tags_List,, GET_Tags_List
 GuiControlGet, Split_GET_Admins_List,, GET_Admins_List
-GuiControlGet, New_Name,, GET_Name
-GuiControlGet, New_Description,, GET_Description
-GuiControlGet, New_Game_Password,, GET_Game_Password
-GuiControlGet, New_Slots,, GET_Slots_Edit
-GuiControlGet, New_Username,, GET_Username
-GuiControlGet, New_Password,, GET_Password
-GuiControlGet, New_Token,, GET_Token
-GuiControlGet, New_Auto_Pause,, GET_Auto_Pause
-GuiControlGet, New_Verify_User_Identity,, GET_Verify_User_Identity
-GuiControlGet, New_Auto_Save_Interval,, GET_Auto_Save_Interval_Edit
-GuiControlGet, New_Auto_Save_Slots,, GET_Auto_Save_Slots_Edit
-GuiControlGet, New_AFK_Autokick_Interval,, GET_AFK_Autokick_Interval_Edit
-GuiControlGet, New_Visibility_Lan,, GET_Visibility_Lan
-GuiControlGet, New_Visibility_Public,, GET_Visibility_Public
 If (GET_Allow_Commands == 1 or GET_Allow_Commands == "admins-only")
 	New_Allow_Commands = admins-only
 else If (GET_Allow_Commands == 2 or GET_Allow_Commands == "true")
@@ -346,8 +364,8 @@ Array := OrderedArray(   "name", New_Name
 				   , "verify_user_identity", New_Verify_User_Identity
 				   , "admins", []
 				   , "allow_commands", New_Allow_Commands
-				   , "autosave_interval", New_Auto_Save_Interval
-				   , "autosave_slots", New_Auto_Save_Slots
+				   , "autosave_interval", New_Autosave_Interval
+				   , "autosave_slots", New_Autosave_Slots
 				   , "afk_autokick_interval", New_AFK_Autokick_Interval
 				   , "auto_pause", New_Auto_Pause )
 

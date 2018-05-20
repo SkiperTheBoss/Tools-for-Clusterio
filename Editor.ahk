@@ -18,7 +18,7 @@ for n, param in A_Args
 			SplitPath, File, FileName, FileDir
 			; Add Custom server-setting.json to the List
 			Server_Config_Files.Push(Server_Name(file), [FileDir, FileName, Mods, []])
-			Mods := Server_Config_Files[2][1] "\mods\*.zip" 
+			Mods := Server_Config_Files[2][1] "\instanceMods\*.zip" 
 			Loop, %Mods%, 1, 0
 			{
 				Server_Config_Files[2][4].Push(A_LoopFileName)
@@ -32,6 +32,13 @@ for n, param in A_Args
 ; Path to the Clusterio Folder
 factorioClusterio := A_Desktop "\Clusterio\factorioClusterio\"
 
+Server_SharedMods := Object()
+Loop %factorioClusterio%\sharedMods\*.zip, 1, 0
+{
+	Server_SharedMods.Push(A_LoopFileName)
+	Server_SharedMods[0] := A_Index
+}
+
 ; Make a List of all Instance there a placed in Clusterio Folder
 NI := 2
 Loop %factorioClusterio%\instances\*server-settings.json, 0, 1
@@ -40,7 +47,7 @@ Loop %factorioClusterio%\instances\*server-settings.json, 0, 1
 	Server_Config_Files.Push(Server_Name(A_LoopFileLongPath), [FileDir, FileName, Mods, []])
 	
 	mods_i := 0
-	Loop %FileDir%\mods\*.zip, 1, 0
+	Loop %FileDir%\instanceMods\*.zip, 1, 0
 	{
 		Server_Config_Files[NI][4].Push(A_LoopFileName)
 		mods_i := A_Index
@@ -124,7 +131,9 @@ Gui, Add, Edit, x+5 yp w30 vGET_AFK_Autokick_Interval_Edit gES,
 
 ; Tab Mds
 Gui, Tab, 5
-Gui, Add, ListBox, w260 h270 +Redraw vMods,
+Gui, Add, ListBox, w260 h250 +Redraw vMods ReadOnly,
+Gui, Add, Button, gOpenModFolder, Open Mods Folder
+Gui, Add, Button, x+30 yp gOpenSharedModsFolder, Open Share Mods Folder
 
 ; Tab Settings
 
@@ -141,6 +150,26 @@ If (File)
 	GoSub, ReadJSON
 else
 	GoSub Load
+return
+
+; Open the Mods Folder
+OpenModFolder:
+NI := 2
+Loop
+{
+	Current_Path := Server_Config_Files[NI][1] "\" Server_Config_Files[NI][2]
+	If (Current_Path == File) {
+		run % Server_Config_Files[NI][1] "\instanceMods"
+		break
+	}
+	NI += 2
+}
+NI := 0
+return
+
+; Open the Share Mods Folder
+OpenSharedModsFolder:
+run %factorioClusterio%\sharedMods
 return
 
 ; Sliders will Control the Edit
@@ -252,9 +281,7 @@ Loop %Read_Array0%
 	} else
 		Read_%str% := ImportJSON[str]
 }
-; MsgBox, % Read_tags[1]
 
-; Server_Config_Files[2][4][0] ; Mod Anzahl
 NI := 2
 Loop
 {
@@ -262,6 +289,15 @@ Loop
 	If (Current_Path == File) {
 		GuiControl,, Mods, |
 		Modlist :=
+		Loop % Server_SharedMods[0]
+		{
+			Modlist .= Server_SharedMods[A_Index]
+			If (Server_SharedMods[A_Index]) {
+				Modlist .= "|"
+			}
+		}
+		If (Server_Config_Files[NI][4][0])
+			Modlist .= "|"
 		Loop % Server_Config_Files[NI][4][0]
 		{
 			Modlist .= Server_Config_Files[NI][4][A_Index]

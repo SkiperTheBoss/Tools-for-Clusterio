@@ -18,7 +18,6 @@ Please report [Issues here](https://github.com/SkiperTheBoss/Tools-for-Clusterio
      - Added option to select your clusterio Folder.
      - Whitelist (*will be able to copy to all instances)
      - Banlist (*same here)
-     - Modlist (see what the instance for mods has / sharemods will be included)
      - Settings
   - **Manager** (rename Launcher to Manager)
      - will be able to Start / Stop evey single Instance.

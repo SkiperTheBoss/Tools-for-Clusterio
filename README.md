@@ -19,6 +19,9 @@ Please report [Issues here](https://github.com/SkiperTheBoss/Tools-for-Clusterio
      - Whitelist (*will be able to copy to all instances)
      - Banlist (*same here)
      - Settings
+     
+![](https://thumbs.gfycat.com/EcstaticDirtyIridescentshark-max-14mb.gif)
+
   - [**Manager**](https://github.com/SkiperTheBoss/Tools-for-Clusterio/blob/master/Manager.ahk) (rename Launcher to Manager)
      - will be able to Start / Stop evey single Instance.
      - can't promise but i try to bind the console into the autohotkey window

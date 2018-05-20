@@ -13,12 +13,12 @@ You need [AutoHotkey](https://autohotkey.com/) to run the Scripts.
 Please report [Issues here](https://github.com/SkiperTheBoss/Tools-for-Clusterio/issues).
 
 **Planned**
- - **Editor**
+ - [**Editor**](https://github.com/SkiperTheBoss/Tools-for-Clusterio/blob/master/Editor.ahk)
      - ToolTips when you go over the Text or Fields.
      - Added option to select your clusterio Folder.
      - Whitelist (*will be able to copy to all instances)
      - Banlist (*same here)
      - Settings
-  - **Manager** (rename Launcher to Manager)
+  - [**Manager**](https://github.com/SkiperTheBoss/Tools-for-Clusterio/blob/master/Manager.ahk) (rename Launcher to Manager)
      - will be able to Start / Stop evey single Instance.
      - more comming soon...

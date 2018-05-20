@@ -255,7 +255,28 @@ Loop %Read_Array0%
 ; MsgBox, % Read_tags[1]
 
 ; Server_Config_Files[2][4][0] ; Mod Anzahl
+NI := 2
+Loop
+{
+	Current_Path := Server_Config_Files[NI][1] "\" Server_Config_Files[NI][2]
+	If (Current_Path == File) {
+		GuiControl,, Mods, |
+		Modlist :=
+		Loop % Server_Config_Files[NI][4][0]
+		{
+			Modlist .= Server_Config_Files[NI][4][A_Index]
+			If (Server_Config_Files[NI][4][A_Index+1]) {
+				Modlist .= "|"
+			}
+		}
+		GuiControl,, Mods, %Modlist%
+		break
+	}
+	NI += 2
+}
+NI := 0
 ; GuiControl,, Mods, Test|Test2 ; Add to Mod Tab 
+
 List_Keys := "tags,admins"
 StringSplit, List_Array, List_Keys, `,
 Loop %List_Array0%

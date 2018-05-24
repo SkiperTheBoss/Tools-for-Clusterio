@@ -226,7 +226,11 @@ return
 ; Load the Default Server Setting that you can Change.
 Default:
 File := A_WorkingDir "\default-server-settings.json"
-GoSub ReadJSON
+IfExist %File%
+{
+	Config_File := ""
+	GoSub ReadJSON
+}
 return
 
 ; Load the default-server-settings.json
@@ -325,15 +329,21 @@ Loop %Read_Config_Array0%
 NI := 2
 Loop
 {
-	Current_Path := Server_Config_Files[NI][1] "\" Server_Config_Files[NI][2]
+	If (Server_Config_Files[NI][1] && Server_Config_Files[NI][2])
+		Current_Path := Server_Config_Files[NI][1] "\" Server_Config_Files[NI][2]
+	else
+		break
+	
 	If (Current_Path == File) {
 		GuiControl,, Mods, |
 		Modlist :=
-		Loop % Server_SharedMods[0]
-		{
-			Modlist .= Server_SharedMods[A_Index]
-			If (Server_SharedMods[A_Index]) {
-				Modlist .= "|"
+		If (Server_SharedMods[0]) {
+			Loop % Server_SharedMods[0]
+			{
+				Modlist .= Server_SharedMods[A_Index]
+				If (Server_SharedMods[A_Index]) {
+					Modlist .= "|"
+				}
 			}
 		}
 		If (Server_Config_Files[NI][4][0])

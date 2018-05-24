@@ -17,7 +17,13 @@ for n, param in A_Args
 		{
 			SplitPath, File, FileName, FileDir
 			; Add Custom server-setting.json to the List
-			Server_Config_Files.Push(Server_Name(file), [FileDir, FileName, Mods, []])
+			Server_Config_Files.Push(Server_Name(file), [FileDir, FileName, Mods, []])+
+			IfExist, %FileDir%\config.json
+			{
+				Path := FileDir "\config.json"
+				SplitPath, Path , FileName, FileDir
+				Server_Config_Files[NI][5] := FileName
+			}
 			Mods := Server_Config_Files[2][1] "\instanceMods\*.zip" 
 			Loop, %Mods%, 1, 0
 			{
@@ -45,6 +51,12 @@ Loop %factorioClusterio%\instances\*server-settings.json, 0, 1
 {
 	SplitPath A_LoopFileLongPath, FileName, FileDir
 	Server_Config_Files.Push(Server_Name(A_LoopFileLongPath), [FileDir, FileName, Mods, []])
+	IfExist, %FileDir%\config.json
+	{
+		Path := FileDir "\config.json"
+		SplitPath, Path , FileName, FileDir
+		Server_Config_Files[NI][5] := FileName
+	}
 	
 	mods_i := 0
 	Loop %FileDir%\instanceMods\*.zip, 1, 0
@@ -73,7 +85,7 @@ Gui, Add, Button, x+5 yp w50 h23 gDefault, Default
 Gui, Add, Button, xm5 y370 w288 h30 gSave, Save
 
 ; Tabs
-Gui, Add, Tab, xm+5 ym40 w288 h320, General|Advanced|Whitelist|Banlist|Mods|Settings
+Gui, Add, Tab, xm+5 ym40 w288 h320 vTabs, General|Advanced|Whitelist|Banlist|Mods|Settings
 
 ; Tab General
 Gui, Add, Text, xp10 y+5, Name:
@@ -108,13 +120,13 @@ Gui, Add, Radio, x+5 yp altsubmit hwndGAC2, Yes
 Gui, Add, Radio, x+5 yp altsubmit hwndGAC3, No
 Gui, Add, Text, xm15 y+10 w90, Auto Save Interval (Min):
 Gui, Add, Slider, x+3 yp w140 Range0-60 vGET_Autosave_Interval_Slider gSE TickInterval5 altsubmit, 5
-Gui, Add, Edit, x+5 yp w30 vGET_Autosave_Interval_Edit gES,
+Gui, Add, Edit, x+5 yp w30 vGET_Autosave_Interval_Edit gES, 5
 Gui, Add, Text, xm15 y+10 w90, Auto Save Slots:
 Gui, Add, Slider, x+5 yp w140 Range0-10 vGET_Autosave_Slots_Slider gSE TickInterval1 altsubmit, 5
-Gui, Add, Edit, x+5 yp w30 vGET_Autosave_Slots_Edit gES,
+Gui, Add, Edit, x+5 yp w30 vGET_Autosave_Slots_Edit gES, 5
 Gui, Add, Text, xm15 y+10 w90, AFK Autokick Interval (Min):
 Gui, Add, Slider, x+5 yp w140 Range0-60 vGET_AFK_Autokick_Interval_Slider gSE TickInterval5 altsubmit,  0
-Gui, Add, Edit, x+5 yp w30 vGET_AFK_Autokick_Interval_Edit gES,
+Gui, Add, Edit, x+5 yp w30 vGET_AFK_Autokick_Interval_Edit gES, 0
 ; Options: true, false
 ; non-blocking-saving=false
 ; Options: true, false
@@ -136,14 +148,21 @@ Gui, Add, Button, gOpenModFolder, Open Mods Folder
 Gui, Add, Button, x+30 yp gOpenSharedModsFolder, Open Share Mods Folder
 
 ; Tab Settings
+Gui, Tab, 6
+Gui, Add, Text, xm15 y91, Max Upload (kb/s):
+Gui, Add, Slider, x+15 yp w120 Range0-60 TickInterval5 altsubmit vGET_Max_Upload_Slider gSE, 0
+Gui, Add, Edit, x+5 yp w30 vGET_Max_Upload_Edit gES, 0
+Gui, Add, Text, xm15 y+10, Min. Latency (Ticks):
+Gui, Add, Slider, x+8 yp w120 Range0-60 TickInterval5 altsubmit vGET_Min_Latency_Slider gSE, 0
+Gui, Add, Edit, x+5 yp w30 vGET_Min_Latency_Edit gES, 0
+Gui, Add, Text, xm15 y+15, Client Port:
+Gui, Add, Edit, x+32 yp w60 vGET_clientPort,
+Gui, Add, Text, xm15 y+10, Client Password:
+Gui, Add, Edit, x+5 yp w60 vGET_clientPassword,
+Gui, Add, Text, xm15 y+10, Factorio Port:
+Gui, Add, Edit, x+20 yp w60 vGET_factorioPort,
 
-; "max_upload_in_kilobytes_per_second": 0
-; "minimum_latency_in_ticks": 0
-
-; port
-; factorioport
-; etc. 
-
+; Show the GUI
 Gui, Show, AutoSize, Server Config Editor
 
 If (File)
@@ -182,6 +201,10 @@ GuiControlGet, AAIS,, GET_AFK_Autokick_Interval_Slider
 GuiControl, Text, GET_AFK_Autokick_Interval_Edit, %AAIS%
 GuiControlGet, GSS,, GET_Max_Players_Slider
 GuiControl, Text, GET_Max_Players_Edit, %GSS%
+GuiControlGet, GMUS,, GET_Max_Upload_Slider
+GuiControl, Text, GET_Max_Upload_Edit, %GMUS%
+GuiControlGet, GMLS,, GET_Min_Latency_Slider
+GuiControl, Text, GET_Min_Latency_Edit, %GMLS%
 return
 
 ; Edit will Control the Sliders
@@ -194,6 +217,10 @@ GuiControlGet, AAIS,, GET_AFK_Autokick_Interval_Edit
 GuiControl, Text, GET_AFK_Autokick_Interval_Slider, %AAIS%
 GuiControlGet, GSS,, GET_Max_Players_Edit
 GuiControl, Text, GET_Max_Player_Slider, %GSS%
+GuiControlGet, GMUS,, GET_Max_Upload_Edit
+GuiControl, Text, GET_Max_Upload_Slider, %GMUS%
+GuiControlGet, GMLS,, GET_Min_Latency_Edit
+GuiControl, Text, GET_Min_Latency_Slider, %GMLS%
 return
 
 ; Load the Default Server Setting that you can Change.
@@ -215,6 +242,7 @@ If (GET_File) {
 		GET_Current_Server_Name := Server_Config_Files[NI]
 		If (GET_File == GET_Current_Server_Name ) {
 			File := Server_Config_Files[PI].1 "\" Server_Config_Files[PI].2
+			Config_File := Server_Config_Files[PI].1 "\" Server_Config_Files[PI][5]
 			break
 		}
 		NI += 2
@@ -228,7 +256,7 @@ return
 
 ; Change the Value of some Controls in the Gui
 GuiControl:
-GET_Keys := "name,description,game_password,username,password,token,autosave_interval?se,autosave_slots?se,afk_autokick_interval?se,visibility_public?tf,visibility_lan?tf,verify_user_identity?tf,auto_pause?tf,max_players?se,tags?l,admins?l"
+GET_Keys := "name,description,game_password,username,password,token,autosave_interval?se,autosave_slots?se,afk_autokick_interval?se,visibility_public?tf,visibility_lan?tf,verify_user_identity?tf,auto_pause?tf,max_players?se,tags?l,admins?l,factorioPort,clientPort,clientPassword"
 StringSplit, GET_Array, GET_Keys, `,
 Loop %GET_Array0%
 {
@@ -282,6 +310,18 @@ Loop %Read_Array0%
 		Read_%str% := ImportJSON[str]
 }
 
+; Load a JSON File correct (config.json)
+FileRead, Config_JSON_File, %Config_File%
+Import_Config_JSON := JSON.Load(Config_JSON_File)
+
+Read_Config_Keys := "factorioPort,clientPort,clientPassword"
+StringSplit, Read_Config_Array, Read_Config_Keys, `,
+Loop %Read_Config_Array0%
+{
+	str = % Read_Config_Array%A_Index%
+	Read_%str% := Import_Config_JSON[str]
+}
+
 NI := 2
 Loop
 {
@@ -311,7 +351,6 @@ Loop
 	NI += 2
 }
 NI := 0
-; GuiControl,, Mods, Test|Test2 ; Add to Mod Tab 
 
 List_Keys := "tags,admins"
 StringSplit, List_Array, List_Keys, `,
@@ -356,12 +395,14 @@ Loop % Floor(Split_List)
 			IfMsgBox, Yes
 			{
 				New_File := Server_Config_Files[PI][1] "\" Server_Config_Files[PI][2]
+				New_Config_File := Server_Config_Files[PI][1] "\" Server_Config_Files[PI][5]
 				GET_File := Current_Server_Name
 			} else
 				return
 			break
 		} else If (File == Current_Server_Path && GET_File == GET_Current_Server_Name) {
 			New_File := Server_Config_Files[PI][1] "\" Server_Config_Files[PI][2]
+			New_Config_File := Server_Config_Files[PI][1] "\" Server_Config_Files[PI][5]
 			break
 		}
 	}
@@ -374,6 +415,20 @@ StringSplit, New_Array, New_Keys, `,
 Loop %New_Array0%
 {
 	str = % New_Array%A_Index%
+	IfInString, str, ?
+	{
+		StringSplit, str_split, str, ?
+		If (str_split2 == "e") 
+			GuiControlGet, New_%str_split1%,, GET_%str_split1%_Edit
+	} else
+		GuiControlGet, New_%str%,, GET_%str%
+}
+
+New_Config_Keys := "factorioPort,clientPort,clientPassword"
+StringSplit, New_Config_Array, New_Config_Keys, `,
+Loop %New_Config_Array0%
+{
+	str = % New_Config_Array%A_Index%
 	IfInString, str, ?
 	{
 		StringSplit, str_split, str, ?
@@ -413,6 +468,10 @@ Array := OrderedArray(   "name", New_Name
 				   , "afk_autokick_interval", New_AFK_Autokick_Interval
 				   , "auto_pause", New_Auto_Pause )
 
+Array_Config := OrderedArray(  	"factorioPort", New_factorioPort
+						   , "clientPort", New_clientPort
+						   ,	"clientPassword", New_clientPassword )
+
 Loop %GET_Tag0%
 {
 	if GET_Tag%A_Index%
@@ -426,11 +485,12 @@ Loop %GET_Admin0%
 
 ; Create a JSON Format
 JSON_Create := JSON.Dump(Array,,4)
+JSON_Config_Create := JSON.Dump(Array_Config,,4)
 
 ; Make sure it dosen't save true/false with quotes
 StringSplit, JSON_Split, JSON_Create, `n
 Replaced_JSON :=
-Search_Var := "auto_pause,verify_user_identity,lan,public,allow_commands"
+Search_Var := "auto_pause?tf,verify_user_identity?tf,lan?tf,public?tf,allow_commands?tf,afk_autokick_interval,autosave_slots,autosave_interval"
 StringSplit, Search_Word, Search_Var, `,
 
 Loop %JSON_Split0% ; check evey line
@@ -439,12 +499,23 @@ Loop %JSON_Split0% ; check evey line
 	Loop %Search_Word0% ; check all varriable who needs the replace
 	{
 		Current_Word := % Search_Word%A_Index%
-		IfInString, Current_Line, %Current_Word%
+		IfInString, Current_Word, ?tf 
 		{
-			StringReplace, Current_Line, Current_Line, "1", true, all
-			StringReplace, Current_Line, Current_Line, "0", false, all
-			StringReplace, Current_Line, Current_Line, 1, true, all
-			StringReplace, Current_Line, Current_Line, 0, false, all
+			StringSplit, Current_Output, Current_Word, ?
+			IfInString, Current_Line, %Current_Output1%
+			{
+				StringReplace, Current_Line, Current_Line, "1", true, all
+				StringReplace, Current_Line, Current_Line, "0", false, all
+				StringReplace, Current_Line, Current_Line, 1, true, all
+				StringReplace, Current_Line, Current_Line, 0, false, all
+			}
+		} else {
+			IfInString, Current_Line, %Current_Word%
+			{
+				StringSplit, Current_Selected, Current_Line, :
+				StringReplace, Current_Selected2, Current_Selected2, ",, all
+				Current_Line := Current_Selected1 ":" Current_Selected2
+			}
 		}
 	}
 	
@@ -458,6 +529,8 @@ Loop %JSON_Split0% ; check evey line
 If (New_File) {
 	FileDelete, %New_File%
 	FileAppend, %Replaced_JSON%, %New_File%
+	FileDelete, %New_Config_File%
+	FileAppend, %JSON_Config_Create%, %New_Config_File%
 	MsgBox, 0, Server Config Editor, Save server-settings.json for %GET_File%!
 } else {
 	MsgBox, 16, Warning, Couldn't save the File!

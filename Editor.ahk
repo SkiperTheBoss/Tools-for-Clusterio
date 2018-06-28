@@ -2,38 +2,61 @@
 #Persistent
 #NoEnv
 
-#Include lib\JSON.ahk
-#Include lib\OrderedArray.ahk
+#Include <JSON>
+#Include <OrderedArray>
+#Include <language>
+
+_language:=Object()
+_language.dir:=A_ScriptDir "\lang" 	; Path to the translation files
+
+lang_init()
+If (Language)
+	lang_setLanguage(language)
 
 ; List for Servername and they Path
 Server_Config_Files := Object()
 
 ; The Script also works with Parameters
+NI := 0
 for n, param in A_Args
 {
 	If (param == "-file") {
 		File := A_Args[n+1]
+		NI := n+1
 		IfExist, %File%
 		{
 			SplitPath, File, FileName, FileDir
 			; Add Custom server-setting.json to the List
-			Server_Config_Files.Push(Server_Name(file), [FileDir, FileName, Mods, []])+
+			Server_Config_Files.Push(Server_Name(file), [FileDir, FileName, Mods])
 			IfExist, %FileDir%\config.json
 			{
 				Path := FileDir "\config.json"
 				SplitPath, Path , FileName, FileDir
 				Server_Config_Files[NI][5] := FileName
 			}
-			Mods := Server_Config_Files[2][1] "\instanceMods\*.zip" 
+			IfExist, %FileDir%\server-whitelist.json
+			{
+				Path := FileDir "\server-whitelist.json"
+				SplitPath, Path , FileName, FileDir
+				Server_Config_Files[NI][6] := FileName
+			}
+			IfExist, %FileDir%\server-banlist.json
+			{
+				Path := FileDir "\server-banlist.json"
+				SplitPath, Path , FileName, FileDir
+				Server_Config_Files[NI][7] := FileName
+			}
+			Mods := Server_Config_Files[NI][1] "\instanceMods\*.zip" 
 			Loop, %Mods%, 1, 0
 			{
-				Server_Config_Files[2][4].Push(A_LoopFileName)
+				Server_Config_Files[NI][4].Push(A_LoopFileName)
 			} 
 		} else {
 			MsgBox, 16, Warning, Couldn't Load the File.`n`n%File%
 		}
 	}
 }
+NI := 0
 
 ; Path to the Clusterio Folder
 factorioClusterio := A_Desktop "\Clusterio\factorioClusterio\"
@@ -57,6 +80,16 @@ Loop %factorioClusterio%\instances\*server-settings.json, 0, 1
 		SplitPath, Path , FileName, FileDir
 		Server_Config_Files[NI][5] := FileName
 	}
+	{
+		Path := FileDir "\server-whitelist.json"
+		SplitPath, Path , FileName, FileDir
+		Server_Config_Files[NI][6] := FileName
+	}
+	{
+		Path := FileDir "\server-banlist.json"
+		SplitPath, Path , FileName, FileDir
+		Server_Config_Files[NI][7] := FileName
+	}
 	
 	mods_i := 0
 	Loop %FileDir%\instanceMods\*.zip, 1, 0
@@ -67,7 +100,6 @@ Loop %factorioClusterio%\instances\*server-settings.json, 0, 1
 	Server_Config_Files[NI][4][0] := mods_i
 	NI += 2
 }
-
 Split_List := % Server_Config_Files.Length() / 2
 NI := 1
 
@@ -78,53 +110,53 @@ Loop % Floor(Split_List)
 }
 
 ; Serverselect
-Gui, Add, Text, xp y+10 h13, Server:
+Gui, Add, Text, xp y+10 h13, % lang("Server") ":"
 Gui, Add, DropDownList, x+5 yp-2 w150 vSelectFile Choose1, %DropDownList%
-Gui, Add, Button, x+5 yp-2 w50 h23 gLoad, Load
-Gui, Add, Button, x+5 yp w50 h23 gDefault, Default
-Gui, Add, Button, xm5 y370 w288 h30 gSave, Save
+Gui, Add, Button, x+5 yp-2 w50 h23 gLoad, % lang("Load")
+Gui, Add, Button, x+5 yp w50 h23 gDefault, % lang("Default")
+Gui, Add, Button, xm5 y370 w288 h30 gSave, % lang("Save")
 
 ; Tabs
-Gui, Add, Tab, xm+5 ym40 w288 h320 vTabs, General|Advanced|Whitelist|Banlist|Mods|Settings
+Gui, Add, Tab, xm+5 ym40 w288 h320 vTabs, % lang("General|Advanced|Whitelist|Banlist|Mods|Settings")
 
 ; Tab General
-Gui, Add, Text, xp10 y+5, Name:
+Gui, Add, Text, xp10 y+5, % lang("_Name") ":"
 Gui, Add, Edit, x+30 yp w200 h20 vGET_Name, 
-Gui, Add, Text, xm14 y+10, Description:
+Gui, Add, Text, xm14 y+10, % lang("Description") ":"
 Gui, Add, Edit, x+5 yp w200 h20 vGET_Description,
-Gui, Add, Text, xm14 y+10, Game`nPassword:
+Gui, Add, Text, xm14 y+10, % lang("Game%1%Password", "`n") ":"
 Gui, Add, Edit, x+12 yp w200 h20 vGET_Game_Password,
-Gui, Add, Text, xm+75 y+10, Tags:
+Gui, Add, Text, xm+75 y+10, % lang("Tags") ":"
 Gui, Add, Edit, xp y+5 w100 h100 vGET_Tags_List,
-Gui, Add, Text, x+5 yp-17, Admins:
+Gui, Add, Text, x+5 yp-17, % lang("Admins") ":"
 Gui, Add, Edit, xp yp+17 w100 h100 vGET_Admins_List,
-Gui, Add, Text, xm+19 yp+110, Slots:
+Gui, Add, Text, xm+19 yp+110, % lang("Slots") ":"
 Gui, Add, Slider, x+25 yp w174 Range1-100 vGET_Max_Players_Slider gSE TickInterval5 altsubmit, 5
 Gui, Add, Edit, x+5 yp-2 w30 h20 vGET_Max_Players_Edit gES,
 
 ; Tab Advanced
 Gui, Tab, 2
-Gui, Add, Text, xm15 y+5 w50, Username:
+Gui, Add, Text, xm15 y+5 w50, % lang("Username") ":"
 Gui, Add, Edit, x+10 yp w200 h20 vGET_Username,
-Gui, Add, Text, xm15 y+10 w50, Password:
+Gui, Add, Text, xm15 y+10 w50, % lang("Password") ":"
 Gui, Add, Edit, x+10 yp w200 h20 vGET_Password,
-Gui, Add, Text, xm15 y+10 w50, Token:
+Gui, Add, Text, xm15 y+10 w50, % lang("Token") ":"
 Gui, Add, Edit, x+10 yp w200 h20 vGET_Token,
-Gui, Add, Checkbox, xp y+10 vGET_Auto_Pause, Auto Pause
-Gui, Add, Checkbox, x+5 yp vGET_Verify_User_Identity, Verified Players
-Gui, Add, Checkbox, xp-83 y+10 vGET_Visibility_Public, Public
-Gui, Add, Checkbox, x+5 yp vGET_Visibility_Lan, Lan
-Gui, Add, Text, xm15 y+10, Allow Commands:
-Gui, Add, Radio, x+5 yp vGET_Allow_Commands altsubmit hwndGAC1, Admins Only
-Gui, Add, Radio, x+5 yp altsubmit hwndGAC2, Yes
-Gui, Add, Radio, x+5 yp altsubmit hwndGAC3, No
-Gui, Add, Text, xm15 y+10 w90, Auto Save Interval (Min):
+Gui, Add, Checkbox, xp y+10 vGET_Auto_Pause, % lang("Auto Pause")
+Gui, Add, Checkbox, x+5 yp vGET_Verify_User_Identity, % lang("Verified Players")
+Gui, Add, Checkbox, xp-83 y+10 vGET_Visibility_Public, % lang("Public")
+Gui, Add, Checkbox, x+5 yp vGET_Visibility_Lan, % lang("Lan")
+Gui, Add, Text, xm15 y+10, % lang("Allow Commands") ":"
+Gui, Add, Radio, x+5 yp vGET_Allow_Commands altsubmit hwndGAC1, % lang("Admins Only")
+Gui, Add, Radio, x+5 yp altsubmit hwndGAC2, % lang("Yes")
+Gui, Add, Radio, x+5 yp altsubmit hwndGAC3, % lang("No")
+Gui, Add, Text, xm15 y+10 w90, % lang("Auto Save Interval (Min)") ":"
 Gui, Add, Slider, x+3 yp w140 Range0-60 vGET_Autosave_Interval_Slider gSE TickInterval5 altsubmit, 5
 Gui, Add, Edit, x+5 yp w30 vGET_Autosave_Interval_Edit gES, 5
-Gui, Add, Text, xm15 y+10 w90, Auto Save Slots:
+Gui, Add, Text, xm15 y+10 w90, % lang("Auto Save Slots") ":"
 Gui, Add, Slider, x+5 yp w140 Range0-10 vGET_Autosave_Slots_Slider gSE TickInterval1 altsubmit, 5
 Gui, Add, Edit, x+5 yp w30 vGET_Autosave_Slots_Edit gES, 5
-Gui, Add, Text, xm15 y+10 w90, AFK Autokick Interval (Min):
+Gui, Add, Text, xm15 y+10 w90, % lang("AFK Autokick Interval (Min)") ":"
 Gui, Add, Slider, x+5 yp w140 Range0-60 vGET_AFK_Autokick_Interval_Slider gSE TickInterval5 altsubmit,  0
 Gui, Add, Edit, x+5 yp w30 vGET_AFK_Autokick_Interval_Edit gES, 0
 ; Options: true, false
@@ -138,32 +170,36 @@ Gui, Add, Edit, x+5 yp w30 vGET_AFK_Autokick_Interval_Edit gES, 0
 ; game_password
 
 ; Tab Whitelist
+Gui, Tab, 3
+Gui, Add, ListBox, w260 h250 +Redraw ReadOnly,
 
 ; Tab Banlist
+Gui, Tab, 4
+Gui, Add, ListBox, w260 h250 +Redraw ReadOnly,
 
 ; Tab Mds
 Gui, Tab, 5
 Gui, Add, ListBox, w260 h250 +Redraw vMods ReadOnly,
-Gui, Add, Button, gOpenModFolder, Open Mods Folder
-Gui, Add, Button, x+30 yp gOpenSharedModsFolder, Open Share Mods Folder
+Gui, Add, Button, gOpenModFolder, % lang("Open Mods Folder")
+Gui, Add, Button, x+30 yp gOpenSharedModsFolder, % lang("Open Share Mods Folder")
 
 ; Tab Settings
 Gui, Tab, 6
-Gui, Add, Text, xm15 y91, Max Upload (kb/s):
+Gui, Add, Text, xm15 y91, % lang("Max Upload (kb/s)") ":"
 Gui, Add, Slider, x+15 yp w120 Range0-60 TickInterval5 altsubmit vGET_Max_Upload_Slider gSE, 0
 Gui, Add, Edit, x+5 yp w30 vGET_Max_Upload_Edit gES, 0
-Gui, Add, Text, xm15 y+10, Min. Latency (Ticks):
+Gui, Add, Text, xm15 y+10, % lang("Min. Latency (Ticks)") ":"
 Gui, Add, Slider, x+8 yp w120 Range0-60 TickInterval5 altsubmit vGET_Min_Latency_Slider gSE, 0
 Gui, Add, Edit, x+5 yp w30 vGET_Min_Latency_Edit gES, 0
-Gui, Add, Text, xm15 y+15, Client Port:
+Gui, Add, Text, xm15 y+15, % lang("Client Port") ":"
 Gui, Add, Edit, x+32 yp w60 vGET_clientPort,
-Gui, Add, Text, xm15 y+10, Client Password:
+Gui, Add, Text, xm15 y+10, % lang("Client Password") ":"
 Gui, Add, Edit, x+5 yp w60 vGET_clientPassword,
-Gui, Add, Text, xm15 y+10, Factorio Port:
+Gui, Add, Text, xm15 y+10, % lang("Factorio Port") ":"
 Gui, Add, Edit, x+20 yp w60 vGET_factorioPort,
 
 ; Show the GUI
-Gui, Show, AutoSize, Server Config Editor
+Gui, Show, AutoSize, % lang("Server Config Editor")
 
 If (File)
 	GoSub, ReadJSON

@@ -27,3 +27,8 @@ Please report [Issues here](https://github.com/SkiperTheBoss/Tools-for-Clusterio
      - can't promise but i try to bind the console into the autohotkey window
      - maybe RCON Connection
      - more comming prob. ...
+
+**Dependencies** (In the lib folder)
+- [JSON](https://github.com/cocobelgica/AutoHotkey-JSON/blob/master/JSON.ahk)
+- [OrderedArray](https://autohotkey.com/board/topic/94043-ordered-array/)
+- [language](https://github.com/bichlepa/lang/blob/master/language/language.ahk)
